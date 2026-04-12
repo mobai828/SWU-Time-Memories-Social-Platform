@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="page-shell">
+    <div class="background-layer" data-auth-background data-storage-key="java:last-login-background"></div>
+    <div class="background-overlay"></div>
+
+    <main class="card">
+        <div class="center">
+            <a class="brand" th:href="@{/}">西大拾光</a>
+            <h1>管理员登录</h1>
+            <p class="subtitle">仅用于站点后台维护，普通用户请使用西南大学统一认证登录。</p>
+        </div>
+
+        <div class="stack" style="margin-top: 28px;">
+            <div class="message message-success" th:if="${param.logout}">您已安全退出登录</div>
+            <div class="message message-error" th:if="${param.error}">
+                <svg style="width: 20px; height: 20px; margin-right: 8px; fill: currentColor; flex-shrink: 0;" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span>管理员登录失败，请检查邮箱和密码</span>
+            </div>
+
+            <form class="stack" th:action="@{/login/local}" method="post">
+                <div class="field">
+                    <label class="label" for="username">邮箱地址</label>
+                    <input class="input" id="username" name="username" type="email" placeholder="admin@example.com" required>
+                </div>
+
+                <div class="field">
+                    <div class="label-row">
+                        <label class="label" for="password">密码</label>
+                        <a class="hint-link" th:href="@{/forgot-password}">忘记密码？</a>
+                    </div>
+                    <input class="input" id="password" name="password" type="password" placeholder="管理员密码" required>
+                </div>
+
+                <button class="button button-primary" type="submit">管理员登录</button>
+            </form>
+
+            <a class="button button-secondary center" th:href="@{/login}">返回统一认证登录</a>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/auth-background.js(v='20260406-2')}"></script>
+</body>
+</html>

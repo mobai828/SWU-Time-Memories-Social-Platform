@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/login-interface-db;MODE=MySQL;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  thymeleaf:
+    cache: false
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 200MB
+
+server:
+  port: 8081
+
+app:
+  upload-dir: ./data/uploads
+  default-login-background: https://images.unsplash.com/photo-1495344517868-8ebaf0a2044a?q=80&w=2560&auto=format&fit=crop
+  reset-token-minutes: 30
+  swu-idm:
+    login-url: https://uaaap.swu.edu.cn/cas/login
+    logout-url: https://uaaap.swu.edu.cn/cas/logout
+    service-validate-url: https://uaaap.swu.edu.cn/cas/serviceValidate
+    callback-path: /login/swu/callback
+    force-renew: true
+    connect-timeout-seconds: 10
+    read-timeout-seconds: 15
+  admin:
+    username: admin
+    email: admin@example.com
+    password: Admin123456
+  baidu-censor:
+    app-id: 122779912
+    api-key: 2gYIPSxDJMpsrvbVSIC7GjB1
+    secret-key: YQFtlnv6Lc7E34NMltlVIOM8WX9ATDNZ

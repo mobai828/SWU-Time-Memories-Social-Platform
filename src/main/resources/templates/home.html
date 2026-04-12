@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="home-shell">
+    <div class="background-layer home-background-layer"
+         data-auth-background
+         data-storage-key="java:last-home-background"></div>
+    <div class="home-background-overlay"></div>
+
+    <main class="home-card grid">
+        <section class="split">
+            <div class="stack">
+                <div class="tag">Java 后端版登录界面</div>
+                <div>
+                    <a class="brand" th:href="@{/}">西大拾光</a>
+                    <h1>西南大学统一认证登录与管理员背景管理</h1>
+                    <p class="subtitle">当前实现采用 Spring Boot + Thymeleaf + Spring Security + H2，普通用户通过学校官方认证登录，管理员保留本地维护入口。</p>
+                </div>
+
+                <div class="inline-actions" th:if="${currentUser == null}">
+                    <a class="button button-primary" th:href="@{/auth/swu}">进入统一认证</a>
+                    <a class="button button-secondary" th:href="@{/login/local}">管理员登录</a>
+                </div>
+
+                <div class="stack" th:if="${currentUser != null}">
+                    <div class="panel">
+                        <h3 th:text="'欢迎，' + ${currentUser.username}">欢迎</h3>
+                        <p th:text="'当前身份：' + ${currentUser.role}">当前身份</p>
+                        <div class="inline-actions">
+                            <a class="button button-primary" th:href="@{/profile}">进入个人中心</a>
+                            <form th:action="@{/logout}" method="post">
+                                <button class="button button-secondary" type="submit">退出登录</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-preview"
+                 data-auth-background
+                 data-storage-key="java:last-home-background"
+                 th:style="'background-image:url(' + ${backgroundConfig.selectedImage} + ');'">
+                <div>
+                    <div class="tag" th:text="${backgroundConfig.randomEnabled} ? '随机背景已开启' : '固定背景模式'">背景模式</div>
+                    <h2 style="margin: 14px 0 8px;">主页与登录页背景预览</h2>
+                    <p style="margin: 0;" th:text="'当前候选背景数：' + ${#lists.size(backgroundConfig.images)}">当前候选背景数</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="split">
+            <div class="panel">
+                <h3>管理员初始化账号</h3>
+                <p>邮箱：admin@example.com</p>
+                <p>密码：Admin123456</p>
+                <p>首次启动后即可直接登录管理员页上传背景图。</p>
+            </div>
+            <div class="panel">
+                <h3>当前实现保留的原始能力</h3>
+                <p>共享认证页背景、固定/随机切换、避免连续两次抽到同一张图、本地图片上传、SHA-256 去重、分辨率与清晰度校验、管理员可视化维护，以及统一认证成功后的本地登录态接入。</p>
+            </div>
+        </section>
+    </main>
+</div>
+<script th:src="@{/js/auth-background.js(v='20260406-2')}"></script>
+</body>
+</html>

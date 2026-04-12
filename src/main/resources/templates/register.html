@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="page-shell">
+    <div class="background-layer" data-auth-background data-storage-key="java:last-register-background"></div>
+    <div class="background-overlay"></div>
+
+    <main class="card">
+        <div class="center">
+            <a class="brand" th:href="@{/}">西大拾光</a>
+            <h1>创建账号</h1>
+            <p class="subtitle">加入我们，开启您的西大拾光</p>
+        </div>
+
+        <div class="stack" style="margin-top: 28px;">
+            <div class="message message-error" th:if="${errorMessage}">
+                <svg style="width: 20px; height: 20px; margin-right: 8px; fill: currentColor; flex-shrink: 0;" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <form class="stack" th:action="@{/register}" method="post">
+                <div class="field">
+                    <label class="label" for="username">用户名</label>
+                    <input class="input" id="username" name="username" type="text" placeholder="您的昵称" th:value="${registerUsername}" required>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="email">邮箱地址</label>
+                    <input class="input" id="email" name="email" type="email" placeholder="your@email.com" th:value="${registerEmail}" required>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="password">密码</label>
+                    <input class="input" id="password" name="password" type="password" placeholder="至少 6 位字符" minlength="6" required>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="confirmPassword">确认密码</label>
+                    <input class="input" id="confirmPassword" name="confirmPassword" type="password" placeholder="请再次输入密码" minlength="6" required>
+                </div>
+
+                <button class="button button-primary" type="submit">立即注册</button>
+            </form>
+
+            <a class="button button-secondary center" th:href="@{/}">返回首页</a>
+            <p class="center muted">已有账号？ <a class="hint-link" th:href="@{/login}">立即登录</a></p>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/auth-background.js(v='20260406-2')}"></script>
+</body>
+</html>

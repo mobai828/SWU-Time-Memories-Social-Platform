@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景管理</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="home-shell">
+    <main class="home-card grid">
+        <section class="split">
+            <div class="stack">
+                <div class="tag">管理员控制台</div>
+                <div>
+                    <a class="brand" th:href="@{/}">西大拾光</a>
+                    <h1>鐧诲綍鑳屾櫙鍥剧鐞?/h1>
+                    <p class="subtitle">鏀寔澶氬浘涓婁紶銆佸閾炬坊鍔犮€侀殢鏈哄垏鎹€佹枃浠剁骇鍘婚噸鍜屾湰鍦版枃浠舵竻鐞嗐€?/p>
+                </div>
+
+                <div class="message message-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+                <div class="message message-error" th:if="${errorMessage}">
+                    <svg style="width: 20px; height: 20px; margin-right: 8px; fill: currentColor; flex-shrink: 0;" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+                <div class="message message-success" th:if="${detailMessages}">
+                    <div>澶勭悊璇︽儏锛?/div>
+                    <ul class="message-list">
+                        <li th:each="item : ${detailMessages}" th:text="${item}"></li>
+                    </ul>
+                </div>
+
+                <div class="panel">
+                    <h3>褰撳墠绠＄悊鍛?/h3>
+                    <p th:text="'用户名：' + ${currentUser.username}">鐢ㄦ埛鍚?/p>
+                    <p th:text="'閭锛? + ${currentUser.email}">邮箱</p>
+                    <div class="inline-actions">
+                        <a class="button button-secondary" th:href="@{/}">返回首页</a>
+                        <form th:action="@{/logout}" method="post">
+                            <button class="button button-secondary" type="submit">閫€鍑虹櫥褰?/button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-preview" th:style="'background-image:url(' + ${backgroundConfig.selectedImage} + '); min-height: 360px;'">
+                <div>
+                    <div class="tag" th:text="${backgroundConfig.randomEnabled} ? '闅忔満鑳屾櫙宸插紑鍚? : '固定背景模式'">背景模式</div>
+                    <h2 style="margin: 14px 0 8px;">褰撳墠鐧诲綍椤佃儗鏅?/h2>
+                    <p style="margin: 0;" th:text="'鑳屾櫙鍊欓€夋暟閲忥細' + ${#lists.size(backgroundConfig.images)}">鑳屾櫙鍊欓€夋暟閲?/p>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel stack background-manager-panel">
+            <div class="background-manager-head">
+                <div>
+                    <div class="tag">背景资源管理</div>
+                    <h3>鐧诲綍鑳屾櫙鍥惧垪琛?/h3>
+                    <p>鎶婁笂浼犮€佹湰鍦板幓閲嶃€佸閾剧淮鎶ゅ拰鏄剧ず妯″紡闆嗕腑鍒颁竴涓尯鍩燂紝鎿嶄綔璧锋潵鏇撮『鎵嬨€?/p>
+                </div>
+            </div>
+
+            <div class="background-action-row">
+                <form class="background-link-form" th:action="@{/admin/backgrounds/external}" method="post">
+                    <input class="input background-link-input" type="url" name="imageUrl"
+                           placeholder="粘贴图片 URL 鍚庡姞鍏ュ垪琛? required>
+                    <button class="button button-secondary background-action-button" type="submit">添加链接</button>
+                </form>
+
+                <form class="background-upload-form" th:action="@{/admin/backgrounds/upload}" method="post" enctype="multipart/form-data">
+                    <input class="background-file-input" id="background-files" type="file" name="files"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple required>
+                    <label class="button button-secondary background-action-button background-file-trigger" for="background-files">选择图片</label>
+                    <button class="button button-primary background-action-button" type="submit">上传图片</button>
+                    <div class="background-file-status muted" id="background-file-status">鏈€夋嫨鏂囦欢</div>
+                </form>
+            </div>
+
+            <div class="background-manager-copy">
+                <p>鍙互缁存姢澶氬紶鐧诲綍鑳屾櫙鍥俱€傚紑鍚殢鏈哄垏鎹㈠悗锛岀櫥褰曢〉浼氫粠鍒楄〃涓疆鎾睍绀猴紱鍏抽棴鍚庡垯浣跨敤浣犻€変腑鐨勫浐瀹氳儗鏅浘銆?/p>
+                <p>鏀寔涓€娆￠€夋嫨澶氬紶鍥剧墖鎵归噺涓婁紶锛屽缓璁笂浼犺嚦灏?1600 x 900 的清晰图片；重复文件会按 SHA-256 鑷姩澶嶇敤銆?/p>
+            </div>
+
+            <form id="background-settings-form" class="stack" th:action="@{/admin/backgrounds/settings}" method="post">
+                <label class="background-random-card">
+                    <span class="background-random-check">
+                        <input type="checkbox" name="randomEnabled" value="true" th:checked="${backgroundConfig.randomEnabled}">
+                    </span>
+                    <span class="background-random-copy">
+                        <strong>姣忔杩涘叆鐧诲綍椤甸殢鏈哄垏鎹㈣儗鏅?/strong>
+                        <span>褰撳墠鍒楄〃鍙敤浜庨殢鏈哄垏鎹€傚叧闂悗锛屽皢鍥哄畾鏄剧ず浣犻€変腑鐨勯偅寮犺儗鏅浘銆?/span>
+                    </span>
+                </label>
+            </form>
+
+            <div class="background-toolbar">
+                <h4 th:text="'宸叉坊鍔?' + ${#lists.size(backgroundConfig.images)} + ' 张背景图'">宸叉坊鍔?0 张背景图</h4>
+                <div class="background-mode-pill" th:text="${backgroundConfig.randomEnabled} ? '褰撳墠妯″紡锛氶殢鏈哄垏鎹? : '褰撳墠妯″紡锛氬浐瀹氳儗鏅?">褰撳墠妯″紡锛氬浐瀹氳儗鏅?/div>
+            </div>
+
+            <div class="image-grid" th:if="${!#lists.isEmpty(backgroundConfig.images)}">
+                <div class="image-card" th:each="image : ${backgroundConfig.images}">
+                    <img th:src="${image}" alt="鑳屾櫙鍥?>
+                    <label class="radio">
+                        <input type="radio" name="selectedImage" th:value="${image}"
+                               th:checked="${image == backgroundConfig.selectedImage}" form="background-settings-form">
+                        <span th:text="${image == backgroundConfig.selectedImage} ? '当前固定背景' : '设为固定背景'">设为固定背景</span>
+                    </label>
+                    <div class="image-meta">
+                        <span th:text="${image.startsWith('/uploads/')} ? '本地上传' : '外部链接'">来源</span>
+                        <form th:action="@{/admin/backgrounds/remove}" method="post">
+                            <input type="hidden" name="imageUrl" th:value="${image}">
+                            <button class="button button-danger button-small" type="submit">删除</button>
+                        </form>
+                    </div>
+                    <div class="muted background-image-url" th:text="${image}">图片地址</div>
+                </div>
+            </div>
+
+            <div class="profile-empty-state" th:if="${#lists.isEmpty(backgroundConfig.images)}">
+                鏆傛棤鑳屾櫙鍥撅紝璇峰厛涓婁紶鍥剧墖鎴栨坊鍔犲閾俱€?            </div>
+
+            <div class="profile-actions">
+                <button class="button button-primary" type="submit" form="background-settings-form">保存背景配置</button>
+            </div>
+        </section>
+    </main>
+</div>
+<script>
+    (() => {
+        const fileInput = document.getElementById("background-files");
+        const fileStatus = document.getElementById("background-file-status");
+        if (!fileInput || !fileStatus) {
+            return;
+        }
+
+        const renderSelectedFiles = () => {
+            const fileCount = fileInput.files ? fileInput.files.length : 0;
+            if (!fileCount) {
+                fileStatus.textContent = "鏈€夋嫨鏂囦欢";
+                return;
+            }
+
+            if (fileCount === 1) {
+                fileStatus.textContent = fileInput.files[0].name;
+                return;
+            }
+
+            fileStatus.textContent = `宸查€夋嫨 ${fileCount} 个文件`;
+        };
+
+        fileInput.addEventListener("change", renderSelectedFiles);
+        renderSelectedFiles();
+    })();
+</script>
+</body>
+</html>

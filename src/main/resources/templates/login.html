@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="page-shell">
+    <div class="background-layer" data-auth-background data-storage-key="java:last-login-background"></div>
+    <div class="background-overlay"></div>
+
+    <main class="card">
+        <div class="center">
+            <a class="brand" th:href="@{/}">西大拾光</a>
+            <h1>欢迎回来</h1>
+            <p class="subtitle">登录您的账号，继续探索校园社交内容</p>
+        </div>
+
+        <div class="stack" style="margin-top: 28px;">
+            <div class="message message-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="message message-success" th:if="${param.logout}">您已安全退出登录</div>
+            <div class="message message-error" th:if="${errorMessage}">
+                <svg style="width: 20px; height: 20px; margin-right: 8px; fill: currentColor; flex-shrink: 0;" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <div class="panel stack">
+                <p style="margin: 0;">点击下方按钮后，会跳转到西南大学官方统一认证页面完成身份验证。</p>
+                <p class="muted" style="margin: 0;">项目本身不再采集校园账号密码，认证成功后会自动回到当前平台并建立登录态。</p>
+            </div>
+
+            <form th:action="@{/auth/swu}" method="get">
+                <button class="button button-primary" style="width: 100%;" type="submit">使用西南大学统一认证登录</button>
+            </form>
+
+            <a class="button button-secondary center" th:href="@{/}">返回首页</a>
+
+            <div class="auth-admin-box">
+                <span class="auth-admin-box-text">需要维护背景图等站点配置？</span>
+                <a class="auth-admin-box-link" th:href="@{/login/local}">管理员登录</a>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/auth-background.js(v='20260406-2')}"></script>
+</body>
+</html>

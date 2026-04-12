@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>个人中心 - 西大拾光</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+</head>
+<body style="background: transparent;">
+<div class="page-shell" style="min-height: 100vh; padding: 0; display: block; overflow: auto; background: transparent !important;">
+    <div class="background-layer" data-auth-background data-storage-key="java:last-login-background"></div>
+    <div class="background-overlay" style="background: rgba(244, 245, 247, 0.45); backdrop-filter: blur(8px);"></div>
+    
+    <div class="m-profile-container" style="position: relative; z-index: 1;">
+    <!-- Top Profile Card -->
+    <div class="m-profile-header-card">
+        <div class="m-profile-info-wrap">
+            <div class="m-avatar-container" id="top-profile-avatar-container">
+                <img th:if="${currentUser.avatarUrl}" th:src="${currentUser.avatarUrl}" class="m-avatar-img" alt="头像">
+                <div th:unless="${currentUser.avatarUrl}" class="m-avatar-fallback" th:text="${#strings.substring(currentUser.username, 0, 1)}">A</div>
+            </div>
+            <div class="m-profile-details">
+                <div class="m-profile-name-row">
+                    <h1 th:text="${currentUser.username}">用户名</h1>
+                    <span class="m-level-tag" th:text="${isAdmin} ? 'Lv.Max (管理员)' : 'Lv.1'">Lv.1</span>
+                </div>
+                <div class="m-profile-meta">
+                    <span class="m-meta-item">通行证ID: <span th:text="${currentUser.email}">email</span></span>
+                </div>
+                <div class="m-profile-signature">
+                    <span class="m-meta-icon">💬</span>
+                    <span>系统原装签名，送给每一位小可爱~</span>
+                </div>
+                <div class="m-profile-meta">
+                    <span class="m-meta-icon">🌐</span>
+                    <span>IP属地: 校园网</span>
+                </div>
+                
+                <div class="m-profile-stats">
+                    <div class="m-stat-item"><strong class="m-stat-num">0</strong><span class="m-stat-label">粉丝</span></div>
+                    <div class="m-stat-item"><strong class="m-stat-num">4</strong><span class="m-stat-label">关注</span></div>
+                    <div class="m-stat-item"><strong class="m-stat-num">0</strong><span class="m-stat-label">获赞</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="m-profile-actions">
+            <a href="#edit-profile" class="m-btn-edit" style="display: inline-block; text-decoration: none;">编辑</a>
+        </div>
+    </div>
+
+    <!-- Bottom Layout -->
+    <div class="m-profile-body">
+        <!-- Left Sidebar -->
+        <aside class="m-profile-sidebar">
+            <div class="m-sidebar-group">
+                <div class="m-sidebar-title">个人中心</div>
+                <a th:href="@{/}" class="m-sidebar-item">首页</a>
+                <a href="#" class="m-sidebar-item">我的发帖</a>
+                <a href="#" class="m-sidebar-item">我的评论</a>
+                <a href="#" class="m-sidebar-item">我的收藏</a>
+                <div class="m-sidebar-divider"></div>
+                <a href="#edit-profile" class="m-sidebar-item active">编辑资料</a>
+                <a href="#admin-settings" class="m-sidebar-item" th:if="${isAdmin}">全局设置</a>
+                <form th:action="@{/logout}" method="post" style="margin: 0; padding: 0; margin-top: 12px;">
+                    <button type="submit" class="m-sidebar-item m-sidebar-logout">退出登录</button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Right Content -->
+        <main class="m-profile-content">
+            <!-- Edit Profile Tab -->
+            <div class="m-content-panel" id="edit-profile">
+                <div class="m-panel-header">
+                    <h2>编辑资料</h2>
+                </div>
+                
+                <div class="m-edit-form-wrap">
+                    <div class="message message-success" th:if="${successMessage}" th:text="${successMessage}" style="margin-bottom: 20px;"></div>
+                    <div class="message message-error" th:if="${errorMessage}" style="margin-bottom: 20px;">
+                        <span th:text="${errorMessage}"></span>
+                    </div>
+
+                    <form th:action="@{/profile}" method="post" enctype="multipart/form-data" class="m-edit-form">
+                        
+                        <!-- Avatar Edit in center -->
+                        <div class="m-avatar-edit-section">
+                            <div class="m-avatar-preview profile-avatar-wrap">
+                                <img th:if="${currentUser.avatarUrl}" th:src="${currentUser.avatarUrl}" class="profile-avatar" alt="头像" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                                <div th:unless="${currentUser.avatarUrl}" class="m-avatar-fallback profile-avatar-fallback" th:text="${#strings.substring(currentUser.username, 0, 1)}">A</div>
+                                <div class="m-avatar-badge">更换头像挂件</div>
+                            </div>
+                            
+                            <label for="profile-avatar-file" class="m-avatar-change-btn">修改头像</label>
+                            <input id="profile-avatar-file" type="file" name="avatarFileRaw" accept=".jpg,.jpeg,.png,.webp,.gif" style="display: none;">
+                            <input type="hidden" id="profile-avatar-cropped" name="avatarFileBase64">
+                            <input type="hidden" id="profile-avatar-url" name="avatarUrl" th:value="${profileAvatarUrl != null ? profileAvatarUrl : (currentUser.avatarUrl != null and !currentUser.avatarUrl.startsWith('/uploads/') ? currentUser.avatarUrl : '')}">
+                            <div id="profile-avatar-file-name" style="display:none;">未选择文件</div>
+                        </div>
+
+                        <div class="m-form-group">
+                            <label class="m-form-label">昵称</label>
+                            <div class="m-form-input-wrap">
+                                <input type="text" name="username" class="m-form-input" th:value="${profileUsername != null ? profileUsername : currentUser.username}" required maxlength="20">
+                                <span class="m-input-counter" th:text="${#strings.length(currentUser.username)} + '/20'"></span>
+                            </div>
+                        </div>
+                        <div class="m-form-group" style="margin-top:-20px; margin-bottom:24px;">
+                            <label class="m-form-label"></label>
+                            <div class="m-form-hint" th:text="${remainingCount > 0 ? '每日限修改 ' + dailyLimit + ' 次，今日还可修改 ' + remainingCount + ' 次。' : '修改次数已达上限 (' + dailyLimit + '次)。'}"></div>
+                        </div>
+
+                        <div class="m-form-group">
+                            <label class="m-form-label">性别</label>
+                            <div class="m-radio-group">
+                                <label class="m-radio-label"><input type="radio" name="gender" value="M"> 男</label>
+                                <label class="m-radio-label"><input type="radio" name="gender" value="F"> 女</label>
+                                <label class="m-radio-label"><input type="radio" name="gender" value="U" checked> 保密</label>
+                            </div>
+                        </div>
+
+                        <div class="m-form-group">
+                            <label class="m-form-label">个性签名</label>
+                            <div class="m-form-input-wrap">
+                                <textarea class="m-form-textarea" placeholder="系统原装签名，送给每一位小可爱~"></textarea>
+                                <span class="m-input-counter">0/48</span>
+                            </div>
+                        </div>
+                        <div class="m-form-group" style="margin-top:-20px; margin-bottom:24px;">
+                            <label class="m-form-label"></label>
+                            <div class="m-form-hint">每15天可修改一次签名</div>
+                        </div>
+
+                        <div class="m-form-actions">
+                            <button type="submit" class="m-btn-save" th:disabled="${remainingCount <= 0}">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Admin Settings Tab -->
+            <div class="m-content-panel" id="admin-settings" th:if="${isAdmin}" style="display: none;">
+                <div class="m-panel-header">
+                    <h2>全局设置 (管理员)</h2>
+                </div>
+                <div style="padding: 24px;">
+                    <section class="profile-card profile-admin-card" style="box-shadow: none; padding: 0;">
+                        <div class="profile-section-head">
+                            <div class="background-admin-intro">
+                                <div class="tag">管理员全局设置</div>
+                                <h2 class="background-admin-title" style="font-size: 24px;">登录背景图管理</h2>
+                                <p class="background-admin-copy" style="font-size: 14px;">对齐 `user-profile-ui-pack` 的后台能力，支持多图维护、固定或随机显示、外链添加与本地上传。</p>
+                            </div>
+                            <div class="profile-preview" th:style="'background-image:url(' + ${backgroundConfig.selectedImage} + ');'">
+                                <div class="profile-preview-mask">
+                                    <span class="tag" th:text="${backgroundConfig.randomEnabled} ? '随机切换中' : '固定背景中'">模式</span>
+                                    <strong th:text="'当前候选：' + ${#lists.size(backgroundConfig.images)} + ' 张'">当前候选</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-admin-grid">
+                            <section class="panel stack" style="grid-column: 1 / -1; padding: 20px;">
+                                <div>
+                                    <h3 style="font-size: 16px; margin-bottom: 8px;">用户权限与基础设置</h3>
+                                    <p style="font-size: 13px;">调整全站用户的资料修改限制频率等基础配置。</p>
+                                </div>
+                                <form class="stack" th:action="@{/admin/profile-settings}" method="post" style="display: flex; align-items: flex-end; gap: 12px;">
+                                    <div class="field" style="flex: 1;">
+                                        <label class="label" for="profile-daily-limit" style="font-size: 13px;">每日修改资料次数限制</label>
+                                        <input class="input" id="profile-daily-limit" type="number" name="profileUpdateDailyLimit" min="0" th:value="${dailyLimit}" required style="font-size: 14px; padding: 8px 12px; min-height: auto;">
+                                    </div>
+                                    <button class="button button-secondary" type="submit" style="margin-bottom: 2px; padding: 8px 16px;">保存设置</button>
+                                </form>
+                            </section>
+
+                            <section class="panel stack" style="padding: 20px;">
+                                <div class="background-upload-head">
+                                    <div class="background-upload-copy">
+                                        <h3 class="background-section-title" style="font-size: 16px;">批量上传背景图</h3>
+                                        <p class="background-section-copy" style="font-size: 13px;">把文件选择、上传限制和结果预览放到一起，选图后先确认，再一键提交。</p>
+                                    </div>
+                                    <div class="background-upload-badge" style="font-size: 12px; padding: 4px 8px;">本地上传</div>
+                                </div>
+                                <form class="stack background-enhanced-upload-form" id="profile-background-upload-form"
+                                      th:action="@{/admin/backgrounds/upload}" th:attr="data-async-action=@{/admin/backgrounds/upload-async}"
+                                      method="post" enctype="multipart/form-data">
+                                    <input class="background-file-input" id="profile-background-files" type="file" name="files"
+                                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple required>
+
+                                    <label class="background-upload-dropzone" for="profile-background-files" style="padding: 16px;">
+                                        <span class="background-upload-dropzone-kicker" style="font-size: 11px;">批量选择图片</span>
+                                        <strong style="font-size: 15px;">点击重新选择本地背景图文件</strong>
+                                        <span style="font-size: 12px;">支持一次选多张，推荐横版高清图片，上传前会自动检查尺寸与清晰度。</span>
+                                    </label>
+
+                                    <div class="background-file-summary" id="profile-background-file-summary" style="padding: 12px;">
+                                        <div class="background-file-summary-top">
+                                            <strong id="profile-background-file-count" style="font-size: 14px;">未选择文件</strong>
+                                            <span id="profile-background-file-size" style="font-size: 12px;">支持 jpg、jpeg、png、webp</span>
+                                        </div>
+                                        <p class="background-file-summary-hint" id="profile-background-file-hint" style="font-size: 12px;">
+                                            单个文件上限 20MB，本次总上传上限 200MB；建议优先上传至少 1600×900 的横图。
+                                        </p>
+                                        <ul class="background-file-list" id="profile-background-file-list">
+                                            <li class="background-file-list-empty" style="font-size: 12px; padding: 8px;">选择后会在这里显示文件名与大小，方便你确认是否选对。</li>
+                                        </ul>
+                                    </div>
+
+                                    <section class="background-upload-progress-compact" id="profile-background-upload-progress" hidden style="border: 1px solid var(--color-border, #fcd34d); border-radius: 12px; padding: 16px; margin-top: 16px; background-color: rgba(255, 255, 255, 0.8);">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px;">
+                                            <div style="font-weight: 500; color: #374151; display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap;">
+                                                <span id="profile-upload-progress-text" style="flex-shrink: 0;">正在上传:</span>
+                                                <span id="profile-upload-current-file" style="font-weight: normal; text-overflow: ellipsis; overflow: hidden;">等待开始</span>
+                                            </div>
+                                            <div id="profile-upload-current-index" style="color: #6b7280; font-variant-numeric: tabular-nums; flex-shrink: 0; margin-left: 12px;">0/0</div>
+                                        </div>
+                                        
+                                        <div style="height: 8px; background-color: #ffedd5; border-radius: 9999px; overflow: hidden; margin-bottom: 12px;">
+                                            <div id="profile-upload-progress-fill" style="height: 100%; width: 0%; background: linear-gradient(to right, #fb923c, #ec4899); border-radius: 9999px; transition: width 0.3s ease;"></div>
+                                        </div>
+                                        
+                                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; color: #6b7280;">
+                                            <div>新增 <span id="profile-upload-added-count">0</span> 张</div>
+                                            <div>复用 <span id="profile-upload-reused-count">0</span> 张</div>
+                                            <div>跳过 <span id="profile-upload-skipped-count">0</span> 张</div>
+                                            <div>失败 <span id="profile-upload-failed-count">0</span> 张</div>
+                                        </div>
+                                    </section>
+
+                                    <div class="background-note-list">
+                                        <div class="background-note-item" style="padding: 10px 12px;">
+                                            <strong style="font-size: 13px;">尺寸建议</strong>
+                                            <span style="font-size: 12px;">至少 1600×900，登录页展示更完整，裁切也更自然。</span>
+                                        </div>
+                                        <div class="background-note-item" style="padding: 10px 12px;">
+                                            <strong style="font-size: 13px;">去重规则</strong>
+                                            <span style="font-size: 12px;">系统会按 SHA-256 识别重复文件，相同图片不会重复存一份。</span>
+                                        </div>
+                                        <div class="background-note-item" style="padding: 10px 12px;">
+                                            <strong style="font-size: 13px;">格式说明</strong>
+                                            <span style="font-size: 12px;">当前稳定支持 jpg、jpeg、png、webp，避免因格式兼容导致上传失败。</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="profile-actions background-upload-actions">
+                                        <button class="button button-primary background-upload-submit"
+                                                id="profile-background-upload-submit" type="submit" disabled style="min-height: 44px; font-size: 14px;">
+                                            开始上传
+                                        </button>
+                                    </div>
+                                </form>
+                            </section>
+
+                            <section class="panel stack" style="padding: 20px;">
+                                <div>
+                                    <h3 style="font-size: 16px; margin-bottom: 8px;">添加外部背景图</h3>
+                                    <p style="font-size: 13px;">适合已有图床链接的场景，添加后会直接进入候选列表，也可以再切成固定背景。</p>
+                                </div>
+                                <form class="stack" th:action="@{/admin/backgrounds/external}" method="post">
+                                    <input class="input" type="url" name="imageUrl" placeholder="https://example.com/background.jpg" required style="font-size: 14px; padding: 8px 12px; min-height: auto;">
+                                    <button class="button button-secondary" type="submit" style="padding: 8px 16px;">添加链接</button>
+                                </form>
+                            </section>
+                        </div>
+
+                        <section class="panel stack" style="padding: 20px; margin-top: 20px;">
+                            <div>
+                                <h3 style="font-size: 16px; margin-bottom: 8px;">显示设置</h3>
+                                <p style="font-size: 13px;">开启随机后登录页会从列表中轮换背景；关闭后使用你勾选的固定背景图。</p>
+                            </div>
+
+                            <form id="background-settings-form" class="stack" th:action="@{/admin/backgrounds/settings}" method="post">
+                                <label class="checkbox" style="font-size: 14px;">
+                                    <input type="checkbox" name="randomEnabled" value="true" th:checked="${backgroundConfig.randomEnabled}">
+                                    启用随机背景
+                                </label>
+                            </form>
+
+                            <div class="image-grid-toolbar" th:if="${!#lists.isEmpty(backgroundConfig.images)}">
+                                <span class="image-grid-summary" th:text="'共 ' + ${#lists.size(backgroundConfig.images)} + ' 张背景图'" style="font-size: 13px;">共 0 张背景图</span>
+                                <div class="image-grid-toolbar-actions" th:if="${#lists.size(backgroundConfig.images) > 6}">
+                                    <span class="image-grid-hidden-count" id="background-image-grid-hidden-count" style="font-size: 12px; min-height: 28px;">已折叠 0 张</span>
+                                    <button class="button button-secondary image-grid-toggle" id="background-image-grid-toggle" type="button" style="font-size: 13px; padding: 6px 12px; min-height: auto;">
+                                        展开全部图片
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="image-grid image-grid-collapsible is-collapsed" id="background-image-grid"
+                                 th:if="${!#lists.isEmpty(backgroundConfig.images)}">
+                                <div class="image-card" th:each="image : ${backgroundConfig.images}"
+                                     th:classappend="${image == backgroundConfig.selectedImage} ? ' is-selected' : ''" style="padding: 10px;">
+                                    <img th:src="${image}" alt="背景图" style="height: 120px;">
+                                    <label class="radio" style="font-size: 13px;">
+                                        <input type="radio" name="selectedImage" th:value="${image}"
+                                               th:checked="${image == backgroundConfig.selectedImage}" form="background-settings-form">
+                                        <span th:text="${image == backgroundConfig.selectedImage} ? '当前固定背景' : '设为固定背景'">设为固定背景</span>
+                                    </label>
+                                    <div class="image-meta">
+                                        <span class="image-source-tag" th:text="${image.startsWith('/uploads/')} ? '本地上传' : '外部链接'" style="font-size: 11px; min-height: 24px;">来源</span>
+                                        <form th:action="@{/admin/backgrounds/remove}" method="post">
+                                            <input type="hidden" name="imageUrl" th:value="${image}">
+                                            <button class="button button-danger button-small" type="submit" style="padding: 4px 8px; font-size: 12px;">移除</button>
+                                        </form>
+                                    </div>
+                                    <div class="muted profile-url" th:text="${image}" style="font-size: 11px;">图片地址</div>
+                                    <div class="image-card-actions">
+                                        <button class="button button-secondary button-small image-copy-button" type="button"
+                                                th:attr="data-image-url=${image}" style="padding: 4px 8px; font-size: 12px; min-width: 60px;">
+                                            复制地址
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-empty-state" th:if="${#lists.isEmpty(backgroundConfig.images)}" style="font-size: 13px; padding: 20px;">
+                                暂无背景图，请先上传图片或添加外链。
+                            </div>
+
+                            <div class="profile-actions">
+                                <button class="button button-primary" type="submit" form="background-settings-form" style="min-height: 44px; font-size: 14px; padding: 8px 16px;">保存全局设置</button>
+                            </div>
+                        </section>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</div> <!-- End of page-shell -->
+
+<script th:src="@{/js/auth-background.js}"></script>
+
+<!-- Avatar Cropper Modal -->
+<div id="avatar-crop-modal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="modal-content" style="max-width: 500px; width: 100%; background: #fff; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: 16px; color: #111; font-weight: normal; font-size: 18px;">调整头像</h3>
+        <div style="max-height: 60vh; overflow: hidden; display: flex; justify-content: center; background: #000; border-radius: 8px;">
+            <img id="avatar-crop-image" src="" style="max-width: 100%; display: block;" alt="Picture">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+            <button type="button" class="m-btn-edit" id="btn-cancel-crop" style="padding: 8px 24px; border-color: #e5e7eb; color: #374151;">取消</button>
+            <button type="button" class="m-btn-save" id="btn-confirm-crop" style="padding: 8px 24px;">确认裁剪</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<script>
+    // Simple logic to handle character count for username
+    const usernameInput = document.querySelector('input[name="username"]');
+    if (usernameInput) {
+        const usernameCounter = usernameInput.nextElementSibling;
+        usernameInput.addEventListener('input', (e) => {
+            usernameCounter.textContent = e.target.value.length + '/20';
+        });
+    }
+
+    
+    // Tab Switching Logic
+    const sidebarItems = document.querySelectorAll('.m-sidebar-item[href^="#"]');
+    const contentPanels = document.querySelectorAll('.m-content-panel');
+    const topEditBtn = document.querySelector('.m-btn-edit[href="#edit-profile"]');
+
+    function switchTab(targetId) {
+        if (!targetId || targetId === '#') return;
+        
+        // Hide all panels
+        contentPanels.forEach(panel => {
+            panel.style.display = 'none';
+        });
+        
+        // Remove active class from all items
+        sidebarItems.forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Show target panel
+        const targetPanel = document.querySelector(targetId);
+        if (targetPanel) {
+            targetPanel.style.display = 'block';
+        }
+        
+        // Add active class to corresponding item
+        const targetItem = document.querySelector(`.m-sidebar-item[href="${targetId}"]`);
+        if (targetItem) {
+            targetItem.classList.add('active');
+        }
+    }
+
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            // Update URL hash without jumping
+            history.pushState(null, null, targetId);
+            switchTab(targetId);
+        });
+    });
+
+    if (topEditBtn) {
+        topEditBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            history.pushState(null, null, targetId);
+            switchTab(targetId);
+            
+            // Scroll down a bit so the bottom panel is in view
+            const profileBody = document.querySelector('.m-profile-body');
+            if (profileBody) {
+                profileBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+
+    // Initial load tab
+    window.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash;
+        if (hash && document.querySelector(hash)) {
+            switchTab(hash);
+        } else {
+            // Default to edit-profile
+            switchTab('#edit-profile');
+        }
+    });
+
+
+    // ==========================================
+    // Avatar Cropper Logic (Restored)
+    // ==========================================
+    (() => {
+        const avatarFileInput = document.getElementById("profile-avatar-file");
+        const avatarFileName = document.getElementById("profile-avatar-file-name");
+        const croppedInput = document.getElementById("profile-avatar-cropped");
+        const cropModal = document.getElementById("avatar-crop-modal");
+        const cropImage = document.getElementById("avatar-crop-image");
+        const btnCancelCrop = document.getElementById("btn-cancel-crop");
+        const btnConfirmCrop = document.getElementById("btn-confirm-crop");
+        
+        let cropper = null;
+
+        if (!avatarFileInput || !avatarFileName) {
+            return;
+        }
+
+        const showCropper = (file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                cropImage.src = e.target.result;
+                cropModal.style.display = 'flex';
+                
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                cropper = new Cropper(cropImage, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 0.9,
+                    restore: false,
+                    guides: false,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+            reader.readAsDataURL(file);
+        };
+
+        btnCancelCrop?.addEventListener('click', () => {
+            cropModal.style.display = 'none';
+            avatarFileInput.value = '';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        btnConfirmCrop?.addEventListener('click', () => {
+            if (!cropper) return;
+            
+            const canvas = cropper.getCroppedCanvas({
+                width: 512,
+                height: 512,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+            
+            if (canvas) {
+                const base64Image = canvas.toDataURL('image/jpeg', 0.9);
+                croppedInput.value = base64Image;
+                
+                // Update preview immediately
+                const avatarWrap = document.querySelector(".profile-avatar-wrap");
+                if (avatarWrap) {
+                    let img = avatarWrap.querySelector('img.profile-avatar');
+                    const fallback = avatarWrap.querySelector('.profile-avatar-fallback');
+                    
+                    if (!img) {
+                        img = document.createElement('img');
+                        img.className = 'profile-avatar';
+                        img.alt = '头像';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '50%';
+                        avatarWrap.appendChild(img);
+                    }
+                    
+                    if (fallback) {
+                        fallback.style.display = 'none';
+                    }
+                    
+                    img.src = base64Image;
+                    img.style.display = 'block';
+                }
+
+                // Also update the top header avatar
+                const topAvatarContainer = document.getElementById("top-profile-avatar-container");
+                if (topAvatarContainer) {
+                    let topImg = topAvatarContainer.querySelector('img.m-avatar-img');
+                    const topFallback = topAvatarContainer.querySelector('.m-avatar-fallback');
+                    
+                    if (!topImg) {
+                        topImg = document.createElement('img');
+                        topImg.className = 'm-avatar-img';
+                        topImg.alt = '头像';
+                        topAvatarContainer.appendChild(topImg);
+                    }
+                    if (topFallback) {
+                        topFallback.style.display = 'none';
+                    }
+                    topImg.src = base64Image;
+                    topImg.style.display = 'block';
+                }
+
+                
+                // Update file name display
+                avatarFileName.textContent = '已裁剪: ' + avatarFileInput.files[0].name;
+                
+                // Clear URL input
+                const avatarUrlInput = document.getElementById("profile-avatar-url");
+                if (avatarUrlInput) {
+                    avatarUrlInput.value = "";
+                }
+            }
+            
+            cropModal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        const handleFileChange = (event) => {
+            const files = avatarFileInput.files;
+            if (!files || !files.length) {
+                avatarFileName.textContent = "未选择文件";
+                croppedInput.value = "";
+                return;
+            }
+
+            const file = files[0];
+            if (file && file.type.startsWith('image/')) {
+                // Check size (e.g. 10MB limit before cropping)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('图片超过 10MB，请先压缩。');
+                    avatarFileInput.value = '';
+                    return;
+                }
+                showCropper(file);
+            } else {
+                alert('请选择有效的图片文件。');
+                avatarFileInput.value = '';
+            }
+        };
+
+        avatarFileInput.addEventListener("change", handleFileChange);
+    })();
+
+    // ==========================================
+    // Admin Background Grid Events (Restored)
+    // ==========================================
+    const bindImageGridEvents = () => {
+        const imageGrid = document.getElementById("background-image-grid");
+        const imageGridToggle = document.getElementById("background-image-grid-toggle");
+        const imageGridHiddenCount = document.getElementById("background-image-grid-hidden-count");
+        if (imageGrid && imageGridToggle) {
+            const collapsedClassName = "is-collapsed";
+            const collapsedVisibleCount = 6;
+            const totalCount = imageGrid.querySelectorAll(".image-card").length;
+            const hiddenCount = Math.max(0, totalCount - collapsedVisibleCount);
+            
+            // Remove old listener to avoid duplicates if re-binding
+            const newToggle = imageGridToggle.cloneNode(true);
+            if (imageGridToggle.parentNode) {
+                imageGridToggle.parentNode.replaceChild(newToggle, imageGridToggle);
+            }
+
+            const updateImageGridToggleText = () => {
+                const isCollapsed = imageGrid.classList.contains(collapsedClassName);
+                newToggle.textContent = isCollapsed ? "展开全部图片" : "收起多余图片";
+                if (imageGridHiddenCount) {
+                    imageGridHiddenCount.textContent = isCollapsed
+                            ? `已折叠 ${hiddenCount} 张`
+                            : "已展开全部图片";
+                }
+            };
+
+            newToggle.addEventListener("click", () => {
+                imageGrid.classList.toggle(collapsedClassName);
+                updateImageGridToggleText();
+            });
+
+            updateImageGridToggleText();
+        }
+
+        const copyButtons = document.querySelectorAll(".image-copy-button");
+        if (copyButtons.length && navigator.clipboard) {
+            copyButtons.forEach((button) => {
+                const originalText = button.textContent;
+                // Clone to clear old listeners
+                const newButton = button.cloneNode(true);
+                if (button.parentNode) {
+                    button.parentNode.replaceChild(newButton, button);
+                }
+                newButton.addEventListener("click", async () => {
+                    const imageUrl = newButton.dataset.imageUrl || "";
+                    if (!imageUrl) {
+                        return;
+                    }
+
+                    try {
+                        await navigator.clipboard.writeText(imageUrl);
+                        newButton.textContent = "已复制";
+                        window.setTimeout(() => {
+                            newButton.textContent = originalText;
+                        }, 1200);
+                    } catch (error) {
+                        newButton.textContent = "复制失败";
+                        window.setTimeout(() => {
+                            newButton.textContent = originalText;
+                        }, 1200);
+                    }
+                });
+            });
+        }
+    };
+
+    // Initial binding
+    bindImageGridEvents();
+
+    // ==========================================
+    // Admin Background Upload Logic (Restored)
+    // ==========================================
+    (() => {
+        const uploadForm = document.getElementById("profile-background-upload-form");
+        const fileInput = document.getElementById("profile-background-files");
+        const submitButton = document.getElementById("profile-background-upload-submit");
+        const countNode = document.getElementById("profile-background-file-count");
+        const sizeNode = document.getElementById("profile-background-file-size");
+        const hintNode = document.getElementById("profile-background-file-hint");
+        const listNode = document.getElementById("profile-background-file-list");
+        const progressCard = document.getElementById("profile-background-upload-progress");
+        const currentFileNode = document.getElementById("profile-upload-current-file");
+        const currentIndexNode = document.getElementById("profile-upload-current-index");
+        const progressFillNode = document.getElementById("profile-upload-progress-fill");
+        const progressTextNode = document.getElementById("profile-upload-progress-text");
+        const addedCountNode = document.getElementById("profile-upload-added-count");
+        const reusedCountNode = document.getElementById("profile-upload-reused-count");
+        const skippedCountNode = document.getElementById("profile-upload-skipped-count");
+        const failedCountNode = document.getElementById("profile-upload-failed-count");
+        if (!uploadForm || !fileInput || !submitButton || !countNode || !sizeNode || !hintNode || !listNode
+            || !progressCard || !currentFileNode || !currentIndexNode || !progressFillNode
+            || !progressTextNode || !addedCountNode || !reusedCountNode || !skippedCountNode || !failedCountNode) {
+            return;
+        }
+
+        const MAX_FILE_BYTES = 20 * 1024 * 1024;
+        const MAX_TOTAL_BYTES = 200 * 1024 * 1024;
+        const MAX_VISIBLE_ITEMS = 6;
+        let isUploading = false;
+
+        const formatBytes = (bytes) => {
+            if (bytes >= 1024 * 1024) {
+                return `${(bytes / 1024 / 1024).toFixed(bytes >= 100 * 1024 * 1024 ? 0 : 1)} MB`;
+            }
+            if (bytes >= 1024) {
+                return `${Math.round(bytes / 1024)} KB`;
+            }
+            return `${bytes} B`;
+        };
+
+        const renderList = (files) => {
+            listNode.innerHTML = "";
+            if (!files.length) {
+                const item = document.createElement("li");
+                item.className = "background-file-list-empty";
+                item.textContent = "选择后会在这里显示文件名与大小，方便你确认是否选对。";
+                listNode.appendChild(item);
+                return;
+            }
+
+            files.slice(0, MAX_VISIBLE_ITEMS).forEach((file) => {
+                const item = document.createElement("li");
+                item.className = "background-file-item";
+                if (file.size > MAX_FILE_BYTES) {
+                    item.classList.add("is-warning");
+                }
+                item.textContent = `${file.name} · ${formatBytes(file.size)}`;
+                listNode.appendChild(item);
+            });
+
+            if (files.length > MAX_VISIBLE_ITEMS) {
+                const extraItem = document.createElement("li");
+                extraItem.className = "background-file-item background-file-item-muted";
+                extraItem.textContent = `另有 ${files.length - MAX_VISIBLE_ITEMS} 个文件已选择`;
+                listNode.appendChild(extraItem);
+            }
+        };
+
+        const getOrCreateMessageNode = (type) => {
+            const className = type === "error" ? "message message-error" : "message message-success";
+            let node = uploadForm.parentElement.querySelector(`.${className.replace(/ /g, ".")}`);
+            if (!node) {
+                node = document.createElement("div");
+                node.className = className;
+                uploadForm.parentElement.insertBefore(node, uploadForm);
+            }
+            return node;
+        };
+
+        const clearInlineMessages = () => {
+            ["message-success", "message-error"].forEach((className) => {
+                const node = uploadForm.parentElement.querySelector(`.${className}`);
+                if (node) {
+                    node.remove();
+                }
+            });
+        };
+
+        const showMessage = (type, text) => {
+            clearInlineMessages();
+            const node = getOrCreateMessageNode(type);
+            node.textContent = text;
+        };
+
+        const updateUploadStats = (stats) => {
+            addedCountNode.textContent = String(stats.addedCount);
+            reusedCountNode.textContent = String(stats.reusedCount);
+            skippedCountNode.textContent = String(stats.skippedCount);
+            failedCountNode.textContent = String(stats.failedCount);
+        };
+
+        const resetProgressState = () => {
+            progressCard.hidden = true;
+            progressCard.classList.remove("is-error", "is-success");
+            progressFillNode.style.width = "0%";
+            currentFileNode.textContent = "等待开始";
+            currentIndexNode.textContent = "0/0";
+            progressTextNode.textContent = "准备上传文件...";
+            updateUploadStats({ addedCount: 0, reusedCount: 0, skippedCount: 0, failedCount: 0 });
+        };
+
+        const setUploadingState = (uploading) => {
+            isUploading = uploading;
+            submitButton.disabled = uploading || submitButton.dataset.canSubmit !== "true";
+            fileInput.disabled = uploading;
+        };
+
+        const renderSelectedFiles = () => {
+            const files = Array.from(fileInput.files || []);
+            const fileCount = files.length;
+            const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+            const oversizedCount = files.filter((file) => file.size > MAX_FILE_BYTES).length;
+
+            renderList(files);
+
+            if (!fileCount) {
+                countNode.textContent = "未选择文件";
+                sizeNode.textContent = "支持 jpg、jpeg、png、webp";
+                hintNode.textContent = "单个文件上限 20MB，本次总上传上限 200MB；建议优先上传至少 1600×900 的横图。";
+                submitButton.dataset.canSubmit = "false";
+                submitButton.disabled = true;
+                return;
+            }
+
+            countNode.textContent = `已选择 ${fileCount} 个文件`;
+            sizeNode.textContent = `总大小 ${formatBytes(totalBytes)}`;
+
+            if (oversizedCount > 0) {
+                hintNode.textContent = `有 ${oversizedCount} 个文件超过 20MB，服务器会拒绝上传，请先压缩或移除。`;
+                submitButton.dataset.canSubmit = "false";
+                submitButton.disabled = true;
+                return;
+            }
+
+            if (totalBytes > MAX_TOTAL_BYTES) {
+                hintNode.textContent = `当前批量总大小为 ${formatBytes(totalBytes)}，已超过 200MB 上限，请减少本次选择数量。`;
+                submitButton.dataset.canSubmit = "false";
+                submitButton.disabled = true;
+                return;
+            }
+
+            hintNode.textContent = "文件检查通过，可以直接提交上传；系统仍会在服务端再次校验尺寸、清晰度和重复文件。";
+            submitButton.dataset.canSubmit = "true";
+            submitButton.disabled = isUploading;
+        };
+
+        uploadForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (submitButton.dataset.canSubmit !== "true" || isUploading) {
+                return;
+            }
+
+            const files = Array.from(fileInput.files || []);
+            if (!files.length) {
+                return;
+            }
+
+            // Get CSRF token
+            const csrfTokenInput = uploadForm.querySelector('input[name="_csrf"]');
+            const csrfToken = csrfTokenInput ? csrfTokenInput.value : "";
+            const csrfHeader = "X-CSRF-TOKEN";
+
+            clearInlineMessages();
+            resetProgressState();
+            progressCard.hidden = false;
+            progressTextNode.textContent = "准备上传:";
+            currentFileNode.textContent = "正在校验...";
+            setUploadingState(true);
+
+            let totalAdded = 0;
+            let totalReused = 0;
+            let totalSkipped = 0;
+            let totalFailed = 0;
+            const allDetailMessages = [];
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                currentIndexNode.textContent = `${i + 1}/${files.length}`;
+                currentFileNode.textContent = file.name;
+                progressTextNode.textContent = "正在处理:";
+                
+                const percent = Math.max(4, Math.min(100, ((i) / files.length) * 100));
+                progressFillNode.style.width = `${percent.toFixed(1)}%`;
+
+                const formData = new FormData();
+                formData.append("files", file);
+                if (csrfToken) {
+                    formData.append("_csrf", csrfToken);
+                }
+
+                try {
+                    const response = await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", uploadForm.dataset.asyncAction || uploadForm.action, true);
+                        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                        if (csrfToken) {
+                            xhr.setRequestHeader(csrfHeader, csrfToken);
+                        }
+                        xhr.responseType = "json";
+
+                        xhr.upload.addEventListener("progress", (progressEvent) => {
+                            if (progressEvent.lengthComputable) {
+                                const filePercent = progressEvent.loaded / progressEvent.total;
+                                const overallPercent = Math.max(4, Math.min(100, ((i + filePercent) / files.length) * 100));
+                                progressFillNode.style.width = `${overallPercent.toFixed(1)}%`;
+                            }
+                        });
+
+                        xhr.addEventListener("load", () => {
+                            if (xhr.status >= 200 && xhr.status < 300 && xhr.response && xhr.response.success) {
+                                resolve(xhr.response);
+                            } else {
+                                reject(xhr.response || { message: `请求失败 (状态码: ${xhr.status})` });
+                            }
+                        });
+
+                        xhr.addEventListener("error", () => reject({ message: "网络连接异常" }));
+                        xhr.send(formData);
+                    });
+
+                    totalAdded += response.addedCount || 0;
+                    totalReused += response.reusedCount || 0;
+                    totalSkipped += response.skippedCount || 0;
+                    totalFailed += response.failedCount || 0;
+                    if (response.detailMessages) {
+                        allDetailMessages.push(...response.detailMessages);
+                    }
+
+                } catch (error) {
+                    totalFailed += 1;
+                    allDetailMessages.push(`${file.name}: ${error.message || "上传失败"}`);
+                }
+
+                updateUploadStats({
+                    addedCount: totalAdded,
+                    reusedCount: totalReused,
+                    skippedCount: totalSkipped,
+                    failedCount: totalFailed
+                });
+            }
+
+            setUploadingState(false);
+            progressFillNode.style.width = "100%";
+            progressTextNode.textContent = "处理完成:";
+            currentFileNode.textContent = "所有文件已处理完毕";
+            
+            const isFullySuccess = totalFailed === 0;
+            progressCard.classList.toggle("is-success", isFullySuccess);
+            progressCard.classList.toggle("is-error", !isFullySuccess);
+
+            if (isFullySuccess) {
+                fetch(window.location.href)
+                    .then(res => res.text())
+                    .then(html => {
+                        const doc = new DOMParser().parseFromString(html, "text/html");
+                        
+                        const newGrid = doc.getElementById("background-image-grid");
+                        const oldGrid = document.getElementById("background-image-grid");
+                        if (newGrid && oldGrid) {
+                            oldGrid.innerHTML = newGrid.innerHTML;
+                            oldGrid.className = newGrid.className;
+                        } else if (newGrid && !oldGrid) {
+                            const emptyState = document.querySelector(".profile-empty-state");
+                            if (emptyState) {
+                                emptyState.parentNode.insertBefore(newGrid, emptyState);
+                                emptyState.remove();
+                            }
+                        }
+                        
+                        const newToolbar = doc.querySelector(".image-grid-toolbar");
+                        const oldToolbar = document.querySelector(".image-grid-toolbar");
+                        if (newToolbar && oldToolbar) {
+                            oldToolbar.innerHTML = newToolbar.innerHTML;
+                        } else if (newToolbar && !oldToolbar) {
+                            const form = document.getElementById("background-settings-form");
+                            if (form) form.parentNode.insertBefore(newToolbar, form.nextSibling);
+                        }
+                        
+                        const newPreview = doc.querySelector(".profile-preview");
+                        const oldPreview = document.querySelector(".profile-preview");
+                        if (newPreview && oldPreview) {
+                            oldPreview.outerHTML = newPreview.outerHTML;
+                        }
+
+                        bindImageGridEvents();
+                        fileInput.value = "";
+                        renderSelectedFiles();
+                    })
+                    .catch(err => {
+                        console.error("局部刷新失败", err);
+                    });
+            } else {
+                if (allDetailMessages.length > 0) {
+                    showMessage("error", `上传结束，成功新增 ${totalAdded} 张，但有 ${totalFailed} 张图片失败。`);
+                    const messageNode = uploadForm.parentElement.querySelector('.message-error');
+                    if (messageNode) {
+                        const errorList = allDetailMessages.map(msg => `<li>${msg}</li>`).join("");
+                        messageNode.innerHTML += `<ul style="margin: 8px 0 0; padding-left: 20px; font-size: 13px; text-align: left;">${errorList}</ul>`;
+                    }
+                }
+                
+                if (totalAdded > 0 || totalReused > 0) {
+                    fetch(window.location.href)
+                        .then(res => res.text())
+                        .then(html => {
+                            const doc = new DOMParser().parseFromString(html, "text/html");
+                            const newGrid = doc.getElementById("background-image-grid");
+                            const oldGrid = document.getElementById("background-image-grid");
+                            if (newGrid && oldGrid) {
+                                oldGrid.innerHTML = newGrid.innerHTML;
+                                oldGrid.className = newGrid.className;
+                            }
+                            bindImageGridEvents();
+                            fileInput.value = "";
+                            renderSelectedFiles();
+                        });
+                }
+            }
+        });
+
+        fileInput.addEventListener("change", renderSelectedFiles);
+        resetProgressState();
+        renderSelectedFiles();
+    })();
+</script>
+</body>
+</html>
