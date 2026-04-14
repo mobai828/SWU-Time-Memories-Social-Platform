@@ -1,6 +1,6 @@
 #FileLock
-#Sun Apr 12 17:50:10 CST 2026
+#Mon Apr 13 17:50:20 CST 2026
 hostName=Mobai
-id=19d81192b314c842262deb4241d39598563a7e1db5e
+id=19d863fad7308480cf5ee267323d3de569c3bc3e4ab
 method=file
-server=10.135.139.165\:17814
+server=10.69.129.161\:31996

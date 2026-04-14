@@ -30,7 +30,7 @@
                 </div>
                 <div class="m-profile-signature">
                     <span class="m-meta-icon">💬</span>
-                    <span>系统原装签名，送给每一位小可爱~</span>
+                    <span th:text="${(currentUser.signature != null and !currentUser.signature.isEmpty()) ? currentUser.signature : '系统原装签名，送给每一位小可爱~'}">系统原装签名，送给每一位小可爱~</span>
                 </div>
                 <div class="m-profile-meta">
                     <span class="m-meta-icon">🌐</span>
@@ -38,9 +38,9 @@
                 </div>
                 
                 <div class="m-profile-stats">
-                    <div class="m-stat-item"><strong class="m-stat-num">0</strong><span class="m-stat-label">粉丝</span></div>
-                    <div class="m-stat-item"><strong class="m-stat-num">4</strong><span class="m-stat-label">关注</span></div>
-                    <div class="m-stat-item"><strong class="m-stat-num">0</strong><span class="m-stat-label">获赞</span></div>
+                    <div class="m-stat-item"><strong class="m-stat-num" th:text="${currentUser.followerCount}">0</strong><span class="m-stat-label">粉丝</span></div>
+                    <div class="m-stat-item"><strong class="m-stat-num" th:text="${currentUser.followingCount}">0</strong><span class="m-stat-label">关注</span></div>
+                    <div class="m-stat-item"><strong class="m-stat-num" th:text="${currentUser.likesReceivedCount}">0</strong><span class="m-stat-label">获赞</span></div>
                 </div>
             </div>
         </div>
@@ -89,7 +89,6 @@
                             <div class="m-avatar-preview profile-avatar-wrap">
                                 <img th:if="${currentUser.avatarUrl}" th:src="${currentUser.avatarUrl}" class="profile-avatar" alt="头像" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
                                 <div th:unless="${currentUser.avatarUrl}" class="m-avatar-fallback profile-avatar-fallback" th:text="${#strings.substring(currentUser.username, 0, 1)}">A</div>
-                                <div class="m-avatar-badge">更换头像挂件</div>
                             </div>
                             
                             <label for="profile-avatar-file" class="m-avatar-change-btn">修改头像</label>
@@ -112,24 +111,21 @@
                         </div>
 
                         <div class="m-form-group">
-                            <label class="m-form-label">性别</label>
-                            <div class="m-radio-group">
-                                <label class="m-radio-label"><input type="radio" name="gender" value="M"> 男</label>
-                                <label class="m-radio-label"><input type="radio" name="gender" value="F"> 女</label>
-                                <label class="m-radio-label"><input type="radio" name="gender" value="U" checked> 保密</label>
-                            </div>
-                        </div>
-
-                        <div class="m-form-group">
                             <label class="m-form-label">个性签名</label>
                             <div class="m-form-input-wrap">
-                                <textarea class="m-form-textarea" placeholder="系统原装签名，送给每一位小可爱~"></textarea>
-                                <span class="m-input-counter">0/48</span>
+                                <textarea class="m-form-textarea" name="signature" maxlength="48" placeholder="写一句有趣的个性签名吧～"
+                                          th:text="${profileSignature != null ? profileSignature : (currentUser.signature != null ? currentUser.signature : '')}"></textarea>
+                                <span class="m-input-counter" id="signature-counter"
+                                      th:text="${#strings.length(profileSignature != null ? profileSignature : (currentUser.signature != null ? currentUser.signature : ''))} + '/48'">0/48</span>
+                                <div class="signature-helper-row">
+                                    <button class="button signature-clear-button" id="signature-clear-button" type="button">清空</button>
+                                </div>
+                                <div class="signature-templates">
+                                    <button class="button signature-template-button" type="button" data-signature-template="保持热爱，奔赴山海。">保持热爱</button>
+                                    <button class="button signature-template-button" type="button" data-signature-template="学习中，欢迎交流～">学习中</button>
+                                    <button class="button signature-template-button" type="button" data-signature-template="记录校园日常，分享一点快乐。">校园日常</button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="m-form-group" style="margin-top:-20px; margin-bottom:24px;">
-                            <label class="m-form-label"></label>
-                            <div class="m-form-hint">每15天可修改一次签名</div>
                         </div>
 
                         <div class="m-form-actions">
@@ -160,7 +156,7 @@
                             </div>
                         </div>
 
-                        <div class="profile-admin-grid">
+                        <div class="profile-admin-grid admin-settings-layout">
                             <section class="panel stack" style="grid-column: 1 / -1; padding: 20px;">
                                 <div>
                                     <h3 style="font-size: 16px; margin-bottom: 8px;">用户权限与基础设置</h3>
@@ -176,16 +172,20 @@
                             </section>
 
                             <section class="panel stack" style="padding: 20px;">
-                                <div class="background-upload-head">
-                                    <div class="background-upload-copy">
-                                        <h3 class="background-section-title" style="font-size: 16px;">批量上传背景图</h3>
-                                        <p class="background-section-copy" style="font-size: 13px;">把文件选择、上传限制和结果预览放到一起，选图后先确认，再一键提交。</p>
-                                    </div>
-                                    <div class="background-upload-badge" style="font-size: 12px; padding: 4px 8px;">本地上传</div>
-                                </div>
-                                <form class="stack background-enhanced-upload-form" id="profile-background-upload-form"
-                                      th:action="@{/admin/backgrounds/upload}" th:attr="data-async-action=@{/admin/backgrounds/upload-async}"
-                                      method="post" enctype="multipart/form-data">
+                                <details class="admin-upload-collapsible">
+                                    <summary>
+                                        <div class="background-upload-head">
+                                            <div class="background-upload-copy">
+                                                <h3 class="background-section-title" style="font-size: 16px;">批量上传背景图</h3>
+                                                <p class="background-section-copy" style="font-size: 13px;">默认折叠，按需展开上传，减少首屏占高。</p>
+                                            </div>
+                                            <div class="background-upload-badge" style="font-size: 12px; padding: 4px 8px;">本地上传</div>
+                                        </div>
+                                    </summary>
+
+                                    <form class="stack background-enhanced-upload-form" id="profile-background-upload-form"
+                                          th:action="@{/admin/backgrounds/upload}" th:attr="data-async-action=@{/admin/backgrounds/upload-async}"
+                                          method="post" enctype="multipart/form-data">
                                     <input class="background-file-input" id="profile-background-files" type="file" name="files"
                                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple required>
 
@@ -229,7 +229,9 @@
                                         </div>
                                     </section>
 
-                                    <div class="background-note-list">
+                                    <details class="admin-collapsible-tips">
+                                        <summary>上传建议与规则</summary>
+                                        <div class="background-note-list" style="margin-top: 10px;">
                                         <div class="background-note-item" style="padding: 10px 12px;">
                                             <strong style="font-size: 13px;">尺寸建议</strong>
                                             <span style="font-size: 12px;">至少 1600×900，登录页展示更完整，裁切也更自然。</span>
@@ -242,7 +244,8 @@
                                             <strong style="font-size: 13px;">格式说明</strong>
                                             <span style="font-size: 12px;">当前稳定支持 jpg、jpeg、png、webp，避免因格式兼容导致上传失败。</span>
                                         </div>
-                                    </div>
+                                        </div>
+                                    </details>
 
                                     <div class="profile-actions background-upload-actions">
                                         <button class="button button-primary background-upload-submit"
@@ -250,37 +253,47 @@
                                             开始上传
                                         </button>
                                     </div>
-                                </form>
+                                    </form>
+                                </details>
                             </section>
 
-                            <section class="panel stack" style="padding: 20px;">
+                            <section class="panel stack admin-settings-side" style="padding: 20px;">
                                 <div>
-                                    <h3 style="font-size: 16px; margin-bottom: 8px;">添加外部背景图</h3>
-                                    <p style="font-size: 13px;">适合已有图床链接的场景，添加后会直接进入候选列表，也可以再切成固定背景。</p>
+                                    <h3 style="font-size: 16px; margin-bottom: 8px;">显示与图库设置</h3>
+                                    <p style="font-size: 13px;">右侧集中处理随机开关、外链添加与配置保存，减少来回滚动。</p>
                                 </div>
-                                <form class="stack" th:action="@{/admin/backgrounds/external}" method="post">
+
+                                <form id="background-settings-form" class="stack" th:action="@{/admin/backgrounds/settings}" method="post">
+                                    <label class="checkbox" style="font-size: 14px;">
+                                        <input type="checkbox" name="randomEnabled" value="true" th:checked="${backgroundConfig.randomEnabled}">
+                                        启用随机背景
+                                    </label>
+                                </form>
+
+                                <div class="image-grid-toolbar" th:if="${!#lists.isEmpty(backgroundConfig.images)}">
+                                    <span class="image-grid-summary" th:text="'共 ' + ${#lists.size(backgroundConfig.images)} + ' 张背景图'" style="font-size: 13px;">共 0 张背景图</span>
+                                </div>
+
+                                <form class="stack" th:action="@{/admin/backgrounds/external}" method="post" style="padding-top: 4px;">
+                                    <label class="label" style="font-size: 13px;">添加外部背景图</label>
                                     <input class="input" type="url" name="imageUrl" placeholder="https://example.com/background.jpg" required style="font-size: 14px; padding: 8px 12px; min-height: auto;">
                                     <button class="button button-secondary" type="submit" style="padding: 8px 16px;">添加链接</button>
                                 </form>
+
+                                <div class="profile-actions" style="margin-top: 4px;">
+                                    <button class="button button-primary" type="submit" form="background-settings-form" style="min-height: 44px; font-size: 14px; padding: 8px 16px; width: 100%;">保存全局设置</button>
+                                </div>
                             </section>
                         </div>
 
                         <section class="panel stack" style="padding: 20px; margin-top: 20px;">
                             <div>
-                                <h3 style="font-size: 16px; margin-bottom: 8px;">显示设置</h3>
-                                <p style="font-size: 13px;">开启随机后登录页会从列表中轮换背景；关闭后使用你勾选的固定背景图。</p>
+                                <h3 style="font-size: 16px; margin-bottom: 8px;">背景图库</h3>
+                                <p style="font-size: 13px;">选择固定背景、复制地址或移除背景图。列表过长时可展开全部查看。</p>
                             </div>
 
-                            <form id="background-settings-form" class="stack" th:action="@{/admin/backgrounds/settings}" method="post">
-                                <label class="checkbox" style="font-size: 14px;">
-                                    <input type="checkbox" name="randomEnabled" value="true" th:checked="${backgroundConfig.randomEnabled}">
-                                    启用随机背景
-                                </label>
-                            </form>
-
                             <div class="image-grid-toolbar" th:if="${!#lists.isEmpty(backgroundConfig.images)}">
-                                <span class="image-grid-summary" th:text="'共 ' + ${#lists.size(backgroundConfig.images)} + ' 张背景图'" style="font-size: 13px;">共 0 张背景图</span>
-                                <div class="image-grid-toolbar-actions" th:if="${#lists.size(backgroundConfig.images) > 6}">
+                                <div class="image-grid-toolbar-actions" th:if="${#lists.size(backgroundConfig.images) > 3}">
                                     <span class="image-grid-hidden-count" id="background-image-grid-hidden-count" style="font-size: 12px; min-height: 28px;">已折叠 0 张</span>
                                     <button class="button button-secondary image-grid-toggle" id="background-image-grid-toggle" type="button" style="font-size: 13px; padding: 6px 12px; min-height: auto;">
                                         展开全部图片
@@ -318,10 +331,6 @@
                             <div class="profile-empty-state" th:if="${#lists.isEmpty(backgroundConfig.images)}" style="font-size: 13px; padding: 20px;">
                                 暂无背景图，请先上传图片或添加外链。
                             </div>
-
-                            <div class="profile-actions">
-                                <button class="button button-primary" type="submit" form="background-settings-form" style="min-height: 44px; font-size: 14px; padding: 8px 16px;">保存全局设置</button>
-                            </div>
                         </section>
                     </section>
                 </div>
@@ -356,6 +365,36 @@
         const usernameCounter = usernameInput.nextElementSibling;
         usernameInput.addEventListener('input', (e) => {
             usernameCounter.textContent = e.target.value.length + '/20';
+        });
+    }
+
+    const signatureInput = document.querySelector('textarea[name="signature"]');
+    const signatureCounter = document.getElementById('signature-counter');
+    const signatureClearButton = document.getElementById('signature-clear-button');
+    const signatureTemplateButtons = document.querySelectorAll('[data-signature-template]');
+    const updateSignatureCounter = () => {
+        if (!signatureInput || !signatureCounter) {
+            return;
+        }
+        signatureCounter.textContent = signatureInput.value.length + '/48';
+    };
+    if (signatureInput) {
+        signatureInput.addEventListener('input', updateSignatureCounter);
+    }
+    if (signatureInput && signatureClearButton) {
+        signatureClearButton.addEventListener('click', () => {
+            signatureInput.value = '';
+            signatureInput.focus();
+            updateSignatureCounter();
+        });
+    }
+    if (signatureInput && signatureTemplateButtons.length) {
+        signatureTemplateButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                signatureInput.value = button.dataset.signatureTemplate || '';
+                signatureInput.focus();
+                updateSignatureCounter();
+            });
         });
     }
 
@@ -593,7 +632,7 @@
         const imageGridHiddenCount = document.getElementById("background-image-grid-hidden-count");
         if (imageGrid && imageGridToggle) {
             const collapsedClassName = "is-collapsed";
-            const collapsedVisibleCount = 6;
+            const collapsedVisibleCount = 3;
             const totalCount = imageGrid.querySelectorAll(".image-card").length;
             const hiddenCount = Math.max(0, totalCount - collapsedVisibleCount);
             

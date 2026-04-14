@@ -2,6 +2,7 @@ package com.example.logininterface.web;
 
 import com.example.logininterface.service.AuthService;
 import com.example.logininterface.service.SiteBackgroundService;
+import com.example.logininterface.service.SocialStatsService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,15 +15,27 @@ public class HomeController {
 
     private final AuthService authService;
     private final SiteBackgroundService siteBackgroundService;
+    private final SocialStatsService socialStatsService;
 
-    public HomeController(AuthService authService, SiteBackgroundService siteBackgroundService) {
+    public HomeController(
+            AuthService authService,
+            SiteBackgroundService siteBackgroundService,
+            SocialStatsService socialStatsService
+    ) {
         this.authService = authService;
         this.siteBackgroundService = siteBackgroundService;
+        this.socialStatsService = socialStatsService;
     }
 
     @GetMapping("/")
     public String home(Model model) {
-        model.addAttribute("currentUser", authService.getCurrentUser().orElse(null));
+        var currentUser = authService.getCurrentUser()
+                .map(socialStatsService::syncCounters)
+                .orElse(null);
+        model.addAttribute("currentUser", currentUser);
+        if (currentUser != null) {
+            model.addAttribute("suggestedUsers", socialStatsService.getSuggestedUserCards(currentUser));
+        }
         model.addAttribute("backgroundConfig", siteBackgroundService.getConfig());
         model.addAttribute("displayBackgroundImage", siteBackgroundService.resolveDisplayImage());
         return "home";

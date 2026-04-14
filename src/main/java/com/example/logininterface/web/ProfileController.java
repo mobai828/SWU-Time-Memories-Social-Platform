@@ -3,6 +3,7 @@ package com.example.logininterface.web;
 import com.example.logininterface.domain.UserRole;
 import com.example.logininterface.service.AuthService;
 import com.example.logininterface.service.SiteBackgroundService;
+import com.example.logininterface.service.SocialStatsService;
 import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,15 +18,21 @@ public class ProfileController {
 
     private final AuthService authService;
     private final SiteBackgroundService siteBackgroundService;
+    private final SocialStatsService socialStatsService;
 
-    public ProfileController(AuthService authService, SiteBackgroundService siteBackgroundService) {
+    public ProfileController(
+            AuthService authService,
+            SiteBackgroundService siteBackgroundService,
+            SocialStatsService socialStatsService
+    ) {
         this.authService = authService;
         this.siteBackgroundService = siteBackgroundService;
+        this.socialStatsService = socialStatsService;
     }
 
     @GetMapping("/profile")
     public String profile(Model model) {
-        var currentUser = authService.getRequiredCurrentUser();
+        var currentUser = socialStatsService.syncCounters(authService.getRequiredCurrentUser());
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("isAdmin", currentUser.getRole() == UserRole.ADMIN);
         
@@ -42,9 +49,69 @@ public class ProfileController {
         return "profile";
     }
 
+    @PostMapping("/profile/social/follow")
+    public String follow(
+            @RequestParam("targetUserId") Long targetUserId,
+            @RequestParam(value = "returnTo", defaultValue = "/profile") String returnTo,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            socialStatsService.follow(authService.getRequiredCurrentUser(), targetUserId);
+            redirectAttributes.addFlashAttribute("successMessage", "关注成功");
+        } catch (ValidationException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return "redirect:" + sanitizeReturnTo(returnTo);
+    }
+
+    @PostMapping("/profile/social/unfollow")
+    public String unfollow(
+            @RequestParam("targetUserId") Long targetUserId,
+            @RequestParam(value = "returnTo", defaultValue = "/profile") String returnTo,
+            RedirectAttributes redirectAttributes
+    ) {
+        socialStatsService.unfollow(authService.getRequiredCurrentUser(), targetUserId);
+        redirectAttributes.addFlashAttribute("successMessage", "已取消关注");
+        return "redirect:" + sanitizeReturnTo(returnTo);
+    }
+
+    @PostMapping("/profile/social/like")
+    public String likeUser(
+            @RequestParam("targetUserId") Long targetUserId,
+            @RequestParam(value = "returnTo", defaultValue = "/profile") String returnTo,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            socialStatsService.likeUser(authService.getRequiredCurrentUser(), targetUserId);
+            redirectAttributes.addFlashAttribute("successMessage", "点赞成功");
+        } catch (ValidationException exception) {
+            redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
+        }
+        return "redirect:" + sanitizeReturnTo(returnTo);
+    }
+
+    @PostMapping("/profile/social/unlike")
+    public String unlikeUser(
+            @RequestParam("targetUserId") Long targetUserId,
+            @RequestParam(value = "returnTo", defaultValue = "/profile") String returnTo,
+            RedirectAttributes redirectAttributes
+    ) {
+        socialStatsService.unlikeUser(authService.getRequiredCurrentUser(), targetUserId);
+        redirectAttributes.addFlashAttribute("successMessage", "已取消点赞");
+        return "redirect:" + sanitizeReturnTo(returnTo);
+    }
+
+    private String sanitizeReturnTo(String returnTo) {
+        if (returnTo == null || returnTo.isBlank() || !returnTo.startsWith("/")) {
+            return "/profile";
+        }
+        return returnTo;
+    }
+
     @PostMapping("/profile")
     public String updateProfile(
             @RequestParam String username,
+            @RequestParam(defaultValue = "") String signature,
             @RequestParam(defaultValue = "") String avatarUrl,
             @RequestParam(name = "avatarFileRaw", required = false) MultipartFile avatarFileRaw,
             @RequestParam(name = "avatarFileBase64", required = false) String avatarFileBase64,
@@ -64,11 +131,12 @@ public class ProfileController {
                 }
             }
 
-            authService.updateProfile(username, avatarUrl, actualAvatarFile);
+            authService.updateProfile(username, signature, avatarUrl, actualAvatarFile);
             redirectAttributes.addFlashAttribute("successMessage", "个人资料更新成功");
         } catch (ValidationException exception) {
             redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());
             redirectAttributes.addFlashAttribute("profileUsername", username);
+            redirectAttributes.addFlashAttribute("profileSignature", signature);
             redirectAttributes.addFlashAttribute("profileAvatarUrl", avatarUrl);
         }
         return "redirect:/profile";

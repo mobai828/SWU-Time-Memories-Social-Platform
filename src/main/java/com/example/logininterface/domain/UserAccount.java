@@ -29,6 +29,9 @@ public class UserAccount {
     @Column(length = 500)
     private String avatarUrl;
 
+    @Column(length = 48)
+    private String signature;
+
     @Column(nullable = false)
     private String passwordHash;
 
@@ -44,6 +47,15 @@ public class UserAccount {
 
     @Column(name = "daily_profile_update_count", nullable = false)
     private int dailyProfileUpdateCount = 0;
+
+    @Column(name = "follower_count", nullable = false, columnDefinition = "integer default 0")
+    private int followerCount = 0;
+
+    @Column(name = "following_count", nullable = false, columnDefinition = "integer default 0")
+    private int followingCount = 0;
+
+    @Column(name = "likes_received_count", nullable = false, columnDefinition = "integer default 0")
+    private int likesReceivedCount = 0;
 
     @PrePersist
     void onCreate() {
@@ -92,6 +104,14 @@ public class UserAccount {
         this.avatarUrl = avatarUrl;
     }
 
+    public String getSignature() {
+        return signature;
+    }
+
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
+
     public UserRole getRole() {
         return role;
     }
@@ -122,5 +142,29 @@ public class UserAccount {
 
     public void setDailyProfileUpdateCount(int dailyProfileUpdateCount) {
         this.dailyProfileUpdateCount = dailyProfileUpdateCount;
+    }
+
+    public int getFollowerCount() {
+        return followerCount;
+    }
+
+    public void setFollowerCount(int followerCount) {
+        this.followerCount = followerCount;
+    }
+
+    public int getFollowingCount() {
+        return followingCount;
+    }
+
+    public void setFollowingCount(int followingCount) {
+        this.followingCount = followingCount;
+    }
+
+    public int getLikesReceivedCount() {
+        return likesReceivedCount;
+    }
+
+    public void setLikesReceivedCount(int likesReceivedCount) {
+        this.likesReceivedCount = likesReceivedCount;
     }
 }

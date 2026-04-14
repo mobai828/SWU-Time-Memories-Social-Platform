@@ -108,9 +108,10 @@ public class AuthService {
     }
 
     @Transactional
-    public UserAccount updateProfile(String username, String avatarUrl, MultipartFile avatarFile) {
+    public UserAccount updateProfile(String username, String signature, String avatarUrl, MultipartFile avatarFile) {
         UserAccount currentUser = getRequiredCurrentUser();
         String normalizedUsername = normalize(username);
+        String normalizedSignature = normalize(signature);
 
         // Check daily update limit
         java.time.LocalDate today = java.time.LocalDate.now();
@@ -138,6 +139,12 @@ public class AuthService {
         if (!currentUser.getUsername().equals(normalizedUsername) && !baiduCensorService.isTextValid(normalizedUsername)) {
             throw new ValidationException("用户名包含违规或敏感词汇");
         }
+        if (normalizedSignature.length() > 48) {
+            throw new ValidationException("个性签名最多 48 个字符");
+        }
+        if (!normalizedSignature.isBlank() && !baiduCensorService.isTextValid(normalizedSignature)) {
+            throw new ValidationException("个性签名包含违规或敏感词汇");
+        }
 
         String nextAvatarUrl = normalizeAvatarUrl(avatarUrl);
         if (avatarFile != null && !avatarFile.isEmpty()) {
@@ -151,6 +158,7 @@ public class AuthService {
         }
 
         currentUser.setUsername(normalizedUsername);
+        currentUser.setSignature(normalizedSignature.isBlank() ? null : normalizedSignature);
         currentUser.setAvatarUrl(nextAvatarUrl.isBlank() ? null : nextAvatarUrl);
         currentUser.setDailyProfileUpdateCount(currentUser.getDailyProfileUpdateCount() + 1);
         return userAccountRepository.save(currentUser);

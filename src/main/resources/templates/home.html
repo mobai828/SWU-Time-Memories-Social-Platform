@@ -29,15 +29,54 @@
                 </div>
 
                 <div class="stack" th:if="${currentUser != null}">
+                    <div class="message message-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+                    <div class="message message-error" th:if="${errorMessage}">
+                        <span th:text="${errorMessage}"></span>
+                    </div>
                     <div class="panel">
                         <h3 th:text="'欢迎，' + ${currentUser.username}">欢迎</h3>
                         <p th:text="'当前身份：' + ${currentUser.role}">当前身份</p>
+                        <p th:text="'用户ID：' + ${currentUser.id}">用户ID</p>
+                        <p th:text="'粉丝：' + ${currentUser.followerCount} + ' · 关注：' + ${currentUser.followingCount} + ' · 获赞：' + ${currentUser.likesReceivedCount}">统计</p>
                         <div class="inline-actions">
                             <a class="button button-primary" th:href="@{/profile}">进入个人中心</a>
                             <form th:action="@{/logout}" method="post">
                                 <button class="button button-secondary" type="submit">退出登录</button>
                             </form>
                         </div>
+                    </div>
+
+                    <div class="panel stack">
+                        <h3>推荐用户</h3>
+                        <p>可直接在卡片上关注和点赞，统计会同步到个人中心。</p>
+                        <div class="home-suggested-users" th:if="${suggestedUsers != null and !#lists.isEmpty(suggestedUsers)}">
+                            <article class="home-user-card" th:each="user : ${suggestedUsers}">
+                                <div class="home-user-meta">
+                                    <div class="home-user-avatar">
+                                        <img th:if="${user.avatarUrl != null and !user.avatarUrl.isEmpty()}" th:src="${user.avatarUrl}" alt="头像">
+                                        <span th:if="${user.avatarUrl == null or user.avatarUrl.isEmpty()}" th:text="${#strings.substring(user.username, 0, 1)}">U</span>
+                                    </div>
+                                    <div>
+                                        <strong th:text="${user.username}">用户名</strong>
+                                        <div class="muted" th:text="'ID ' + ${user.userId}">ID</div>
+                                        <div class="muted" th:text="'粉丝 ' + ${user.followerCount} + ' · 获赞 ' + ${user.likesReceivedCount}">统计</div>
+                                    </div>
+                                </div>
+                                <div class="home-user-actions">
+                                    <form th:action="${user.followed} ? @{/profile/social/unfollow} : @{/profile/social/follow}" method="post">
+                                        <input type="hidden" name="targetUserId" th:value="${user.userId}">
+                                        <input type="hidden" name="returnTo" value="/">
+                                        <button class="button button-secondary button-small" type="submit" th:text="${user.followed} ? '已关注' : '关注'">关注</button>
+                                    </form>
+                                    <form th:action="${user.liked} ? @{/profile/social/unlike} : @{/profile/social/like}" method="post">
+                                        <input type="hidden" name="targetUserId" th:value="${user.userId}">
+                                        <input type="hidden" name="returnTo" value="/">
+                                        <button class="button button-secondary button-small" type="submit" th:text="${user.liked} ? '已点赞' : '点赞'">点赞</button>
+                                    </form>
+                                </div>
+                            </article>
+                        </div>
+                        <p class="muted" th:if="${suggestedUsers == null or #lists.isEmpty(suggestedUsers)}">暂无可推荐用户，先邀请更多同学注册吧。</p>
                     </div>
                 </div>
             </div>
